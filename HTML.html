@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Синхронизированное Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --secondary-bg: #f8f9fa;
+            --accent-color: #2481cc;
+            --border-color: #e0e0e0;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --secondary-bg: #2d2d2d;
+            --accent-color: #4a9ae9;
+            --border-color: #404040;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 20px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .user-card {
+            background: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            margin-right: 15px;
+        }
+
+        .user-info h3 {
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--secondary-bg);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--secondary-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .task-item {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .task-description {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .task-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-color);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .theme-option.active {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .theme-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid var(--border-color);
+        }
+
+        .light-theme { background: #ffffff; border-color: #e0e0e0; }
+        .dark-theme { background: #1a1a1a; border-color: #404040; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .sync-status {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 500px;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Синхронизированное App</h1>
+            <p>Все данные синхронизируются с ботом</p>
+        </div>
+
+        <div class="user-card">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="user-info">
+                <h3 id="user-name">Пользователь</h3>
+                <p id="user-id">ID: загрузка...</p>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="tasks">✅ Задачи</div>
+            <div class="tab" data-tab="stats">📊 Статистика</div>
+            <div class="tab" data-tab="settings">⚙️ Настройки</div>
+        </div>
+
+        <!-- Вкладка Задачи -->
+        <div class="tab-content active" id="tasks-tab">
+            <div class="card">
+                <h3>📝 Новая задача</h3>
+                <div class="form-group">
+                    <input type="text" id="task-title" class="form-control" placeholder="Название задачи...">
+                </div>
+                <div class="form-group">
+                    <textarea id="task-description" class="form-control" placeholder="Описание (необязательно)..." rows="2"></textarea>
+                </div>
+                <button class="btn" id="add-task">✅ Добавить задачу</button>
+            </div>
+
+            <div class="card">
+                <h3>
+                    📋 Мои задачи
+                    <span id="tasks-count">(0)</span>
+                </h3>
+                <div id="tasks-list">
+                    <div style="text-align: center; padding: 20px; opacity: 0.7;">
+                        Задач пока нет. Добавьте первую задачу!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка Статистика -->
+        <div class="tab-content" id="stats-tab">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-tasks">0</div>
+                    <div class="stat-label">Всего задач</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completed-tasks">0</div>
+                    <div class="stat-label">Выполнено</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📈 Прогресс</h3>
+                <div style="background: var(--bg-color); height: 10px; border-radius: 5px; margin: 15px 0;">
+                    <div id="progress-bar" style="background: var(--accent-color); height: 100%; border-radius: 5px; width: 0%; transition: width 0.5s;"></div>
+                </div>
+                <div style="text-align: center; font-size: 14px; opacity: 0.7;">
+                    Выполнено: <span id="progress-text">0%</span>
+                </div>
+            </div>
+
+            <button class="btn" id="sync-data">🔄 Синхронизировать</button>
+        </div>
+
+        <!-- Вкладка Настройки -->
+        <div class="tab-content" id="settings-tab">
+            <div class="card">
+                <h3>🎨 Внешний вид</h3>
+                
+                <div class="form-group">
+                    <label>Тема приложения:</label>
+                    <div class="theme-option" data-theme="light">
+                        <div class="theme-preview light-theme"></div>
+                        Светлая тема
+                    </div>
+                    <div class="theme-option" data-theme="dark">
+                        <div class="theme-preview dark-theme"></div>
+                        Темная тема
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Язык:</label>
+                    <select class="form-control" id="language-select">
+                        <option value="ru">Русский</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔔 Уведомления</h3>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span>Уведомления</span>
+                    <label class="switch">
+                        <input type="checkbox" id="notifications-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Автосохранение</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autosave-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn" id="save-settings">💾 Сохранить настройки</button>
+        </div>
+
+        <div class="sync-status" id="sync-status">
+            Последняя синхронизация: никогда
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        
+        // Данные приложения
+        let userData = {
+            theme: 'light',
+            language: 'ru',
+            notifications: true,
+            auto_save: true
+        };
+        
+        let tasks = [];
+        
+        // Инициализация
+        tg.expand();
+        tg.enableClosingConfirmation();
+        
+        // Установка информации о пользователе
+        const user = tg.initDataUnsafe.user;
+        if (user) {
+            document.getElementById('user-name').textContent = 
+                `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Пользователь';
+            document.getElementById('user-id').textContent = `ID: ${user.id}`;
+            
+            if (user.username) {
+                document.getElementById('user-avatar').textContent = user.username.charAt(0).toUpperCase();
+            }
+        }
+        
+        // Загрузка данных при запуске
+        loadUserData();
+        
+        // Обработчики вкладок
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab') + '-tab';
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Обработчики тем
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                
+                const theme = option.getAttribute('data-theme');
+                userData.theme = theme;
+                applyTheme(theme);
+            });
+        });
+        
+        // Добавление задачи
+        document.getElementById('add-task').addEventListener('click', () => {
+            const title = document.getElementById('task-title').value.trim();
+            const description = document.getElementById('task-description').value.trim();
+            
+            if (!title) {
+                tg.showPopup({
+                    title: 'Ошибка',
+                    message: 'Введите название задачи',
+                    buttons: [{ type: 'ok' }]
+                });
+                return;
+            }
+            
+            const newTask = {
+                id: Date.now(),
+                title: title,
+                description: description,
+                completed: false,
+                created_at: new Date().toISOString()
+            };
+            
+            tasks.push(newTask);
+            updateTasksList();
+            updateStats();
+            
+            // Отправляем задачу боту
+            sendDataToBot('create_task', {
+                title: title,
+                description: description
+            });
+            
+            // Очищаем поля
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-description').value = '';
+            
+            tg.HapticFeedback.impactOccurred('soft');
+        });
+        
+        // Сохранение настроек
+        document.getElementById('save-settings').addEventListener('click', () => {
+            userData.language = document.getElementById('language-select').value;
+            userData.notifications = document.getElementById('notifications-toggle').checked;
+            userData.auto_save = document.getElementById('autosave-toggle').checked;
+            
+            saveUserData();
+            sendDataToBot('save_settings', {
+                settings: userData
+            });
+            
+            tg.showAlert('Настройки сохранены и синхронизированы!');
+            tg.HapticFeedback.impactOccurred('soft');
+        });
+        
+        // Синхронизация данных
+        document.getElementById('sync-data').addEventListener('click', () => {
+            sendDataToBot('sync_data', {});
+            tg.showAlert('Данные отправлены на синхронизацию!');
+            tg.HapticFeedback.impactOccurred('soft');
+        });
+        
+        // Функции
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                tg.setHeaderColor('secondary_bg_color');
+                tg.setBackgroundColor('#1a1a1a');
+            } else {
+                tg.setHeaderColor('bg_color');
+                tg.setBackgroundColor('#ffffff');
+            }
+        }
+        
+        function updateTasksList() {
+            const tasksList = document.getElementById('tasks-list');
+            const tasksCount = document.getElementById('tasks-count');
+            
+            tasksCount.textContent = `(${tasks.length})`;
+            
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.7;">Задач пока нет. Добавьте первую задачу!</div>';
+                return;
+            }
+            
+            tasksList.innerHTML = tasks.map(task => `
+                <div class="task-item">
+                    <div class="task-info">
+                        <div class="task-title">${task.title}</div>
+                        ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                    </div>
+                    <div class="task-actions">
+                        <button class="task-btn" onclick="toggleTask(${task.id})" style="color: ${task.completed ? '#4CAF50' : '#ff9800'}">
+                            ${task.completed ? '✅' : '⏳'}
+                        </button>
+                        <button class="task-btn" onclick="deleteTask(${task.id})" style="color: #f44336">❌</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateStats() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(task => task.completed).length;
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            document.getElementById('total-tasks').textContent = totalTasks;
+            document.getElementById('completed-tasks').textContent = completedTasks;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').textContent = `${progress}%`;
+        }
+        
+        function toggleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                updateTasksList();
+                updateStats();
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+        
+        function deleteTask(taskId) {
+            tasks = tasks.filter(t => t.id !== taskId);
+            updateTasksList();
+            updateStats();
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+        
+        function sendDataToBot(action, data) {
+            const sendData = {
+                action: action,
+                ...data,
+                timestamp: Date.now()
+            };
+            
+            tg.sendData(JSON.stringify(sendData));
+            updateSyncStatus();
+        }
+        
+        function updateSyncStatus() {
+            const now = new Date();
+            document.getElementById('sync-status').textContent = 
+                `Последняя синхронизация: ${now.toLocaleTimeString()}`;
+        }
+        
+        function saveUserData() {
+            const data = {
+                user: userData,
+                tasks: tasks,
+                last_sync: new Date().toISOString()
+            };
+            localStorage.setItem('miniAppData', JSON.stringify(data));
+        }
+        
+        function loadUserData() {
+            const saved = localStorage.getItem('miniAppData'); 
